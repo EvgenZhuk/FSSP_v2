@@ -19,6 +19,11 @@ namespace FSSP_v2
         public string secondname;  // Отчество
         public string birthdate;   // День рожденье
 
+        public void GetListViolators()
+        {
+
+        }
+
     }
 
     public partial class Form1 : Form
