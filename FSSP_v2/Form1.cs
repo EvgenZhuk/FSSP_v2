@@ -31,7 +31,7 @@ namespace FSSP_v2
                 con.Open();
 
 
-                string sql = ("select " +                                
+                string sql = ("select " +
                                 "upper(v.last_name) as Фамилия, upper(v.first_name) as Имя, upper(v.patronymic) as Отчество, " +
                                 "(to_char(v.birthdate, 'DD.MM.YYYY')) as \"Дата рождения\" , " +
                                 "(md5(concat(upper(v.last_name), upper(v.first_name), upper(v.patronymic), v.birthdate::date))) as \"Контрольная Сумма\", " +
@@ -51,19 +51,20 @@ namespace FSSP_v2
                                 "WHERE v.court_object_id not IN(173, 174) " +
                                 "AND(mia_check_result = 1 OR fssp_check_result = 1 or covid_check_result <> 0) " +
                                 $"AND v.creation_date >= '{dateTimePicker1.Text}' AND v.creation_date <= '{dateTimePicker2.Text} 23:59:59' ORDER BY v.creation_date desc");
-                
+
                 DataSet ds = new DataSet();      // если будет необходимость доступа из вне 
                 DataTable dt = new DataTable();  // просто надо будет раскомментировать эти строки выше
                 NpgsqlDataAdapter da = new NpgsqlDataAdapter(sql, con);
                 ds.Reset();
                 da.Fill(ds);
-                dt = ds.Tables[0];                
-                dataGridView1.DataSource = dt;  
+                dt = ds.Tables[0];
+                dt.Columns.Add("Задолженность", typeof(String));
+                dataGridView1.DataSource = dt;
                 con.Close();
 
-                for (int i = 0; i < dataGridView1.RowCount-1; i++) // нумерация 
+                for (int i = 0; i < dataGridView1.RowCount - 1; i++) // нумерация 
                 {
-                    dataGridView1.Rows[i].HeaderCell.Value = (i + 1).ToString();   
+                    dataGridView1.Rows[i].HeaderCell.Value = (i + 1).ToString();
                 }
 
                 CountViolators = dt.Rows.Count;
@@ -78,5 +79,21 @@ namespace FSSP_v2
                     "Проверьте подключена ли сеть или VPN!", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            if (CountViolators <= 50)
+            {
+                MessageBox.Show("Меньше 50, либо равно 50");
+            }
+            else
+            {
+                MessageBox.Show("Больше 50 ");
+            }
+        }
+
+
+    
+        
     }
 }
