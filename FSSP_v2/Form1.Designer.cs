@@ -37,6 +37,7 @@ namespace FSSP_v2
             this.label2 = new System.Windows.Forms.Label();
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
             this.label3 = new System.Windows.Forms.Label();
+            this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -107,7 +108,7 @@ namespace FSSP_v2
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.RowHeadersWidth = 51;
             this.dataGridView1.RowTemplate.Height = 24;
-            this.dataGridView1.Size = new System.Drawing.Size(1311, 280);
+            this.dataGridView1.Size = new System.Drawing.Size(1381, 280);
             this.dataGridView1.TabIndex = 6;
             // 
             // label3
@@ -121,11 +122,20 @@ namespace FSSP_v2
             this.label3.Text = "label3";
             this.label3.Visible = false;
             // 
+            // richTextBox1
+            // 
+            this.richTextBox1.Location = new System.Drawing.Point(12, 393);
+            this.richTextBox1.Name = "richTextBox1";
+            this.richTextBox1.Size = new System.Drawing.Size(699, 346);
+            this.richTextBox1.TabIndex = 8;
+            this.richTextBox1.Text = "";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1405, 676);
+            this.ClientSize = new System.Drawing.Size(1405, 753);
+            this.Controls.Add(this.richTextBox1);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.dataGridView1);
             this.Controls.Add(this.label2);
@@ -152,6 +162,7 @@ namespace FSSP_v2
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.DataGridView dataGridView1;
         private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.RichTextBox richTextBox1;
     }
 }
 
