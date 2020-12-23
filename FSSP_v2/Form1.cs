@@ -8,11 +8,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Npgsql;
+using System.Net;
+using System.IO;
 
 
 namespace FSSP_v2
 {
-    class ListDataRow
+    /*class ListDataRow
     {
         public string firstname;   // Имя
         public string lastname;    // Фамилия
@@ -37,15 +39,17 @@ namespace FSSP_v2
                   "\t   }\n" +
                   "\t },\n";
         }
+        
 
     }
-
+    */
     public partial class Form1 : Form
     {
         private DataSet ds = new DataSet();
         private DataTable dt = new DataTable();
         int CountViolators; // количество нарушителей
-        
+        String TaskFromFsspApi;
+
         public Form1()
         {
             InitializeComponent();
@@ -110,88 +114,89 @@ namespace FSSP_v2
 
         private void button2_Click(object sender, EventArgs e)
         {
-            if (CountViolators <= 50)
+            int Flag = 0;
+            string LICA = "";
+            string ZaprosToFssp = "";
+            for (int i = 0; i < CountViolators; i++)
             {
-                MessageBox.Show("Меньше 50, либо равно 50");
+                LICA += "{\n" +
+                "\t  \"type\": 1,\n" +
+                "\t  \"params\": {\n" +
+                "\t     \"firstname\": \"" + dt.Rows[i][1].ToString() + "\",\n" +
+                "\t     \"lastname\": \"" + dt.Rows[i][0].ToString() + "\",\n" +
+                "\t     \"secondname\": \"" + dt.Rows[i][2].ToString() + "\",\n" +
+                "\t     \"region\": \"77\",\n" +
+                "\t     \"birthdate\": \"" + dt.Rows[i][3].ToString() + "\"\n" +
+                "\t   }\n" +
+                "\t },\n";
 
-                string LICA = "";
-                for (int i = 0; i < CountViolators; i++)
-                {               
-                    LICA += "{\n" +
-                    "\t  \"type\": 1,\n" +
-                    "\t  \"params\": {\n" +
-                    "\t     \"firstname\": \"" + dt.Rows[i][1].ToString() + "\",\n" +
-                    "\t     \"lastname\": \"" + dt.Rows[i][0].ToString() + "\",\n" +
-                    "\t     \"secondname\": \"" + dt.Rows[i][2].ToString() + "\",\n" +
-                    "\t     \"region\": \"77\",\n" +
-                    "\t     \"birthdate\": \"" + dt.Rows[i][3].ToString() + "\"\n" +
-                    "\t   }\n" +
-                    "\t },\n";
+                Flag++;
+
+
+                if (Flag == 50)
+                {
+                    LICA = LICA.Remove(LICA.LastIndexOf(','));
+
+                    ZaprosToFssp = "{\n" +
+                    "\t\"token\": \"aMYRXmjGwPFm\",\n" +
+                    "\t\"request\": [\n" +
+                    LICA + "\n" +
+                    "\t]\n" +
+                    "}";
+                    richTextBox1.Text = ZaprosToFssp;
+                    Flag = 0; LICA = "";
+
                 }
-                    if (LICA.Length - 2 == LICA.LastIndexOf(','))
-                    {
-                        LICA = LICA.Remove(LICA.LastIndexOf(','));
-                    }
-                
-              string PostGroupFssp = "";
-              PostGroupFssp = "{\n" +
-              "\t\"token\": \"aMYRXmjGwPFm\",\n" +
-              "\t\"request\": [\n" +
-              LICA +"\n"+
-              "\t]\n" +
-              "}";
-              richTextBox1.Text = PostGroupFssp;
 
             }
-            else
+
+            if (LICA != "")
             {
-                MessageBox.Show("Больше 50 ");                
-                double CountPosts = Math.Ceiling(Convert.ToDouble(CountViolators) / 50);                
-                MessageBox.Show(CountPosts.ToString()+"   ");
+                LICA = LICA.Remove(LICA.LastIndexOf(','));
 
-                for (int i = 1; i <CountPosts ; i++)
-                {
-
-                }
-
-
-                /*
-                List <DataRow> batch = new DataRowCollection();
-                foreach (var item in dt.Rows)
-                {
-                    batch.Add(item);
-
-                    if (batch.Count == 50)
-                    {
-                        // Perform operation on batch
-                        batch.Clear();
-                    }
-                }
-
-                // Process last batch
-                if (batch.Any())
-                {
-
-
-                    /*
-
-                     int batchsize = 5;
-                    List<string> colection = new List<string> { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"};
-                    for (int x = 0; x < Math.Ceiling((decimal)colection.Count / batchsize); x++)
-                    {
-                    var t = colection.Skip(x * batchsize).Take(batchsize);
-                        }
-
-                     */
-
-
-                    // Perform operation on batch
-
-                }
+                ZaprosToFssp = "{\n" +
+                "\t\"token\": \"aMYRXmjGwPFm\",\n" +
+                "\t\"request\": [\n" +
+                LICA + "\n" +
+                "\t]\n" +
+                "}";
+                richTextBox2.Text = ZaprosToFssp;
             }
 
+            //------ЗАПИХАТЬ В ОТДЕЛЬНЫЙ МЕТОД
+            WebRequest request = WebRequest.Create("https://api-ip.fssprus.ru/api/v1.0/search/group");
+            request.Method = "POST";
+            byte[] DATA = Encoding.UTF8.GetBytes(ZaprosToFssp);
+            request.ContentType = "application/json; charset=utf-8";
+            request.ContentLength = DATA.Length;
+            Stream dataStream = request.GetRequestStream();
+            dataStream.Write(DATA, 0, DATA.Length);
+            dataStream.Close();
 
-    
-        
+            WebResponse response = request.GetResponse();            
+            using (dataStream = response.GetResponseStream())
+            {
+                StreamReader reader = new StreamReader(dataStream);
+                string responseFromServer = reader.ReadToEnd();
+                richTextBox1.Text = responseFromServer;
+
+                int A = responseFromServer.IndexOf("task");                
+                textBox1.Text = responseFromServer.Substring(A + 7, 36);
+                TaskFromFsspApi = responseFromServer.Substring(A + 7, 36);
+            }
+            response.Close();
+            MessageBox.Show("Вроде как сформировался запрос !");
+
+            //------ЗАПИХАТЬ В ОТДЕЛЬНЫЙ МЕТОД
+
+
+
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {            
+           
+            
+        }
     }
 }
