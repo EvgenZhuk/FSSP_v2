@@ -19,9 +19,23 @@ namespace FSSP_v2
         public string secondname;  // Отчество
         public string birthdate;   // День рожденье
 
-        public void GetListViolators()
+        public void GetListViolators(string A, string B, string C, string D )
         {
+            firstname = A;
+            lastname = B;
+            secondname = C;
+            birthdate = D;
 
+            LICA += "{\n" +
+                  "\t  \"type\": 1,\n" +
+                  "\t  \"params\": {\n" +
+                  "\t     \"firstname\": \"" + firstname + "\",\n" +
+                  "\t     \"lastname\": \"" + lastname + "\",\n" +
+                  "\t     \"secondname\": \"" + secondname + "\",\n" +
+                  "\t     \"region\": \"77\",\n" +
+                  "\t     \"birthdate\": \"" + birthdate + "\"\n" +
+                  "\t   }\n" +
+                  "\t },\n";
         }
 
     }
@@ -31,7 +45,7 @@ namespace FSSP_v2
         private DataSet ds = new DataSet();
         private DataTable dt = new DataTable();
         int CountViolators; // количество нарушителей
-
+        
         public Form1()
         {
             InitializeComponent();
