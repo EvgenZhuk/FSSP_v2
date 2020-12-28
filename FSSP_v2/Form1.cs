@@ -10,6 +10,8 @@ using System.Windows.Forms;
 using Npgsql;
 using System.Net;
 using System.IO;
+using System.Text.RegularExpressions;
+using System.Globalization;
 
 
 namespace FSSP_v2
@@ -49,6 +51,7 @@ namespace FSSP_v2
         private DataTable dt = new DataTable();
         int CountViolators; // количество нарушителей
         String TaskFromFsspApi;
+        string ZaprosToFssp;
 
         public Form1()
         {
@@ -116,7 +119,7 @@ namespace FSSP_v2
         {
             int Flag = 0;
             string LICA = "";
-            string ZaprosToFssp = "";
+            ZaprosToFssp = "";
             for (int i = 0; i < CountViolators; i++)
             {
                 LICA += "{\n" +
@@ -146,6 +149,10 @@ namespace FSSP_v2
                     richTextBox1.Text = ZaprosToFssp;
                     Flag = 0; LICA = "";
 
+                    //MessageBox.Show(ZaprosToFssp);
+                    SendPostToFSSP();
+                    DownloadDocsMainPageAsync();
+                    ParsingResponse();
                 }
 
             }
@@ -163,7 +170,54 @@ namespace FSSP_v2
                 richTextBox2.Text = ZaprosToFssp;
             }
 
-            //------ЗАПИХАТЬ В ОТДЕЛЬНЫЙ МЕТОД
+            SendPostToFSSP();
+            DownloadDocsMainPageAsync();
+            //new System.Threading.Thread(DownloadDocsMainPageAsync).Start();
+            //Task.Run(()=>DownloadDocsMainPageAsync()).RunSynchronously();
+            ParsingResponse();
+
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {            
+            int j = 0;
+            while (dataGridView1.Rows[j].Cells[9].Value.ToString() != "")
+            {
+                MessageBox.Show("Строка " + j.ToString() + " не пустая");
+                j++;
+            }
+            MessageBox.Show("Найдена пустая строка: " + j.ToString() + " пустая");
+        }
+
+
+        private void DownloadDocsMainPageAsync()
+        {
+            //System.Threading.Thread.Sleep(5000);
+            string Status = "";
+            do
+            {
+                var request = WebRequest.Create("https://api-ip.fssprus.ru/api/v1.0/result?token=aMYRXmjGwPFm&task=" + TaskFromFsspApi);
+                var response = request.GetResponseAsync().Result;
+                using (Stream dataStream = response.GetResponseStream())
+                {
+                    StreamReader reader = new StreamReader(dataStream);
+                    string responseFromServer = reader.ReadToEnd();
+                    var result = Regex.Replace(responseFromServer, @"\\[Uu]([0-9A-Fa-f]{4})", m => char.ToString((char)ushort.Parse(m.Groups[1].Value, NumberStyles.AllowHexSpecifier)));
+                    richTextBox1.Text = result;
+                    int A = result.IndexOf("status", 15);
+                    Status = result.Substring(A + 8, 1);
+                    System.Threading.Thread.Sleep(5000);
+                    //await Task.Delay(5000);
+                }
+                response.Close();
+
+            } while (Status != "0");
+                       
+        }
+
+
+        public void SendPostToFSSP()
+        {
             WebRequest request = WebRequest.Create("https://api-ip.fssprus.ru/api/v1.0/search/group");
             request.Method = "POST";
             byte[] DATA = Encoding.UTF8.GetBytes(ZaprosToFssp);
@@ -173,30 +227,29 @@ namespace FSSP_v2
             dataStream.Write(DATA, 0, DATA.Length);
             dataStream.Close();
 
-            WebResponse response = request.GetResponse();            
+            WebResponse response = request.GetResponse();
             using (dataStream = response.GetResponseStream())
             {
                 StreamReader reader = new StreamReader(dataStream);
                 string responseFromServer = reader.ReadToEnd();
                 richTextBox1.Text = responseFromServer;
 
-                int A = responseFromServer.IndexOf("task");                
+                int A = responseFromServer.IndexOf("task");
                 textBox1.Text = responseFromServer.Substring(A + 7, 36);
                 TaskFromFsspApi = responseFromServer.Substring(A + 7, 36);
+                //System.Threading.Thread.Sleep(5000);
             }
             response.Close();
-            MessageBox.Show("Вроде как сформировался запрос !");
-
-            //------ЗАПИХАТЬ В ОТДЕЛЬНЫЙ МЕТОД
-
-
-
         }
 
-        private void button3_Click(object sender, EventArgs e)
-        {            
-           
+
+
+        public void ParsingResponse() 
+        {
             
+        
+
         }
+
     }
 }
