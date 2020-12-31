@@ -12,6 +12,7 @@ using System.Net;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Globalization;
+using Excel = Microsoft.Office.Interop.Excel;
 
 
 namespace FSSP_v2
@@ -52,6 +53,8 @@ namespace FSSP_v2
         int CountViolators; // количество нарушителей
         String TaskFromFsspApi;
         string ZaprosToFssp;
+        string result;
+        int Flag;
 
         public Form1()
         {
@@ -117,7 +120,7 @@ namespace FSSP_v2
 
         private void button2_Click(object sender, EventArgs e)
         {
-            int Flag = 0;
+            Flag = 0;
             string LICA = "";
             ZaprosToFssp = "";
             for (int i = 0; i < CountViolators; i++)
@@ -146,13 +149,15 @@ namespace FSSP_v2
                     LICA + "\n" +
                     "\t]\n" +
                     "}";
-                    richTextBox1.Text = ZaprosToFssp;
-                    Flag = 0; LICA = "";
+                    richTextBox1.Text = ZaprosToFssp;                    
+                    LICA = "";
 
                     //MessageBox.Show(ZaprosToFssp);
                     SendPostToFSSP();
                     DownloadDocsMainPageAsync();
                     ParsingResponse();
+                    Flag = 0;
+                    //MessageBox.Show("Ура! Посчитал!");
                 }
 
             }
@@ -175,18 +180,116 @@ namespace FSSP_v2
             //new System.Threading.Thread(DownloadDocsMainPageAsync).Start();
             //Task.Run(()=>DownloadDocsMainPageAsync()).RunSynchronously();
             ParsingResponse();
-
+            //MessageBox.Show("Ура! Посчитал!");
+            Flag = 0;
         }
 
         private void button3_Click(object sender, EventArgs e)
-        {            
-            int j = 0;
-            while (dataGridView1.Rows[j].Cells[9].Value.ToString() != "")
+        {
+            //Объявляем приложение
+            Excel.Application ex = new Microsoft.Office.Interop.Excel.Application();
+
+            //Отобразить Excel
+            ex.Visible = true;
+
+            // Отображается в полноэкранном режиме
+            ex.WindowState = Microsoft.Office.Interop.Excel.XlWindowState.xlMaximized;
+
+            //Количество листов в рабочей книге
+            ex.SheetsInNewWorkbook = 1;
+
+            //Добавить рабочую книгу
+            Excel.Workbook workBook = ex.Workbooks.Add(Type.Missing);
+
+            //Отключить отображение окон с сообщениями
+            ex.DisplayAlerts = false;
+
+            //Получаем первый лист документа (счет начинается с 1)
+            Excel.Worksheet sheet = (Excel.Worksheet)ex.Worksheets.get_Item(1);
+
+            //Название листа (вкладки снизу)
+            sheet.Name = "Отчет";
+
+            sheet.Cells[1, 1] = "Фамилия";
+            sheet.Cells[1, 2] = "Имя";
+            sheet.Cells[1, 3] = "Отчество";
+            sheet.Cells[1, 4] = "Дата рождения";
+            sheet.Cells[1, 5] = "Контрольная сумма";
+            sheet.Cells[1, 6] = "Дата визита";
+            sheet.Cells[1, 7] = "Адрес СУ";
+            sheet.Cells[1, 8] = "№ СУ";
+            sheet.Cells[1, 9] = "Реестр";
+            sheet.Cells[1, 10] = "Задолженность";
+
+            sheet.Columns[1].ColumnWidth = 23;
+            sheet.Columns[2].ColumnWidth = 20;
+            sheet.Columns[3].ColumnWidth = 20;
+            sheet.Columns[4].ColumnWidth = 15;
+            sheet.Columns[5].ColumnWidth = 40;
+            sheet.Columns[6].ColumnWidth = 20;
+            sheet.Columns[7].ColumnWidth = 40;
+            sheet.Columns[8].ColumnWidth = 10;
+            sheet.Columns[9].ColumnWidth = 40;
+            sheet.Columns[10].ColumnWidth = 20;
+
+            sheet.Rows[1].RowHeight = 25;
+
+            sheet.get_Range("A1", "J2").Font.Bold = true;       // жирный курсив
+            sheet.get_Range("A1", "J1").VerticalAlignment = Excel.XlVAlign.xlVAlignCenter;
+            sheet.get_Range("A1", "J1").HorizontalAlignment = Excel.XlHAlign.xlHAlignCenter;
+            //sheet.get_Range("A1", "J1").Interior.Color = ColorTranslator.ToOle(Color.FromArgb(0xFF, 0xFF, 0xCC));
+            //sheet.get_Range("A2", "J2").Interior.Color = ColorTranslator.ToOle(Color.FromArgb(0x0, 0xFF, 0xFF));
+            sheet.get_Range("A1", "J1").Interior.Color = Color.NavajoWhite;
+            sheet.get_Range("A2", "J2").Interior.Color = Color.DarkTurquoise;
+            sheet.get_Range("A1", "J1").Cells.Font.Name = "Times New Roman";
+            sheet.get_Range("A1", "J1").Cells.Font.Size = 10;
+
+
+
+            int BadBoysCount = 0;
+            //Пример заполнения ячеек                        
+            for (int i = 0; i < dataGridView1.RowCount - 1; i++) // строки
             {
-                MessageBox.Show("Строка " + j.ToString() + " не пустая");
-                j++;
+                for (int j = 0; j < dataGridView1.ColumnCount; j++) // столбцы
+                {
+                    sheet.Cells[i + 3, j + 1] = String.Format(dataGridView1.Rows[i].Cells[j].Value.ToString());
+                }
+                BadBoysCount++;
             }
-            MessageBox.Show("Найдена пустая строка: " + j.ToString() + " пустая");
+            sheet.Cells[2, 1] = "Всего нарушителей - " + BadBoysCount.ToString();
+
+
+            int FsspGuys = 0;
+            int MvdGuys = 0;
+            int CovidGuys = 0;
+
+
+            for (int i = 3; i < sheet.UsedRange.Rows.Count + 1; i++)
+            {
+                if (sheet.Cells[i, 9].Value == "МВД")
+                {
+                    sheet.Cells[i, 9].Interior.Color = Color.Tomato;
+                    MvdGuys++;
+                    //sheet.get_Range(5, 7).Interior.Color = ColorTranslator.ToOle(Color.FromArgb(0x8B, 0x0, 0x0));
+                }
+
+                if (sheet.Cells[i, 9].Value == " ФССП")
+                {
+                    sheet.Cells[i, 9].Interior.Color = Color.LightGreen;
+                    FsspGuys++;
+                }
+
+                if (sheet.Cells[i, 9].Value.StartsWith(" КОВИД"))
+                {
+                    sheet.Cells[i, 9].Interior.Color = Color.Yellow;
+                    CovidGuys++;
+                }
+            }
+            sheet.Cells[2, 9] = "ФССП - " + FsspGuys.ToString() + "\n" + "МВД - " + MvdGuys.ToString() + "\n" + "Covid - " + CovidGuys.ToString();
+
+            sheet.UsedRange.Borders.LineStyle = Excel.XlLineStyle.xlContinuous;
+            sheet.UsedRange.Borders.Weight = Excel.XlBorderWeight.xlThin;
+
         }
 
 
@@ -202,7 +305,7 @@ namespace FSSP_v2
                 {
                     StreamReader reader = new StreamReader(dataStream);
                     string responseFromServer = reader.ReadToEnd();
-                    var result = Regex.Replace(responseFromServer, @"\\[Uu]([0-9A-Fa-f]{4})", m => char.ToString((char)ushort.Parse(m.Groups[1].Value, NumberStyles.AllowHexSpecifier)));
+                    result = Regex.Replace(responseFromServer, @"\\[Uu]([0-9A-Fa-f]{4})", m => char.ToString((char)ushort.Parse(m.Groups[1].Value, NumberStyles.AllowHexSpecifier)));
                     richTextBox1.Text = result;
                     int A = result.IndexOf("status", 15);
                     Status = result.Substring(A + 8, 1);
@@ -246,8 +349,64 @@ namespace FSSP_v2
 
         public void ParsingResponse() 
         {
-            
-        
+
+            // ВОТ ТУТ НАЧИНАЕТСЯ ПАРСИНГ
+            string AllText = result;
+            //MessageBox.Show("Начался парсинг !");
+            int A = AllText.IndexOf('[');
+            int B = AllText.LastIndexOf(']');
+            AllText = AllText.Remove(B);
+            AllText = AllText.Remove(0, A + 1);
+            AllText = AllText.Trim();
+
+            int A1 = AllText.IndexOf('[');
+            int B1 = AllText.LastIndexOf(']');
+            AllText = AllText.Remove(B1 + 1);
+            AllText = AllText.Remove(0, A1 - 1);
+
+
+            for (int i = 1; i <= Flag; i++)
+
+            {
+                int A2 = AllText.IndexOf('[');
+                int B2 = AllText.IndexOf(']');
+                string NEGODYAY = AllText.Substring(A2, B2 + 1);
+
+
+                int tochkaOtscheta = 0;
+                decimal SUMMA;
+                decimal ZADOLZHENOST = 0;
+
+                while (NEGODYAY.IndexOf(" руб", tochkaOtscheta) != -1)
+                {
+                    int RUB = NEGODYAY.IndexOf(" руб", tochkaOtscheta);
+                    int DVOETOCH = NEGODYAY.LastIndexOf(':', RUB);
+                    string DOLG = NEGODYAY.Substring(DVOETOCH + 2, RUB - DVOETOCH - 2);
+                    SUMMA = Decimal.Parse(DOLG.Replace('.', ','));
+                    ZADOLZHENOST += SUMMA;
+                    tochkaOtscheta = RUB + 1;
+
+                }
+                
+                int j = 0;
+                while (dataGridView1.Rows[j].Cells[9].Value.ToString() != "")
+                {                    
+                    j++;
+                }
+                dataGridView1.Rows[j].Cells[9].Value= ZADOLZHENOST.ToString();
+
+
+
+            AllText = AllText.Remove(0, B2 + 1);
+                if (AllText != "")
+                {
+                    AllText = AllText.Remove(0, AllText.IndexOf('['));
+                }
+
+
+            }
+            // ВОТ ТУТ ЗАКАНЧИВАЕТСЯ ПАРСИНГ
+
 
         }
 
