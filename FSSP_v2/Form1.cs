@@ -252,7 +252,8 @@ namespace FSSP_v2
             {
                 for (int j = 0; j < dataGridView1.ColumnCount; j++) // столбцы
                 {
-                    sheet.Cells[i + 3, j + 1] = String.Format(dataGridView1.Rows[i].Cells[j].Value.ToString());
+                    //sheet.Cells[i + 3, j + 1] = String.Format(dataGridView1.Rows[i].Cells[j].Value.ToString());
+                    sheet.Cells[i + 3, j + 1] = dataGridView1.Rows[i].Cells[j].Value;
                 }
                 BadBoysCount++;
             }
@@ -290,6 +291,14 @@ namespace FSSP_v2
             sheet.UsedRange.Borders.LineStyle = Excel.XlLineStyle.xlContinuous;
             sheet.UsedRange.Borders.Weight = Excel.XlBorderWeight.xlThin;
 
+          
+            ///////////////////////// переводим в денежный формат
+            for (int i = 3; i <= sheet.UsedRange.Rows.Count; i++)
+            {
+                sheet.Cells[i, 10] = Convert.ToDecimal(sheet.Cells[i, 10].Value);
+            }
+
+            sheet.get_Range("J3", "J" + (sheet.UsedRange.Rows.Count)).NumberFormat = "#,##0.00 $";
         }
 
 
@@ -393,7 +402,7 @@ namespace FSSP_v2
                 {                    
                     j++;
                 }
-                dataGridView1.Rows[j].Cells[9].Value= ZADOLZHENOST.ToString();
+                dataGridView1.Rows[j].Cells[9].Value = ZADOLZHENOST;    //.ToString();
 
 
 
@@ -408,7 +417,12 @@ namespace FSSP_v2
             // ВОТ ТУТ ЗАКАНЧИВАЕТСЯ ПАРСИНГ
 
 
+
         }
 
+        private void button4_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }
